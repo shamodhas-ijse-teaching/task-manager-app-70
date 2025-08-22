@@ -1,7 +1,8 @@
 import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native"
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useLocalSearchParams, useRouter } from "expo-router"
-import { createTask } from "@/services/taskService"
+import { createTask, getTaskById, updateTask } from "@/services/taskService"
+import { useLoader } from "@/context/LoaderContext"
 
 const TaskFormScreen = () => {
   const { id } = useLocalSearchParams<{ id?: string }>()
@@ -10,6 +11,24 @@ const TaskFormScreen = () => {
   const [title, setTitle] = useState<string>("")
   const [description, setDescription] = useState<string>("")
   const router = useRouter()
+  const { hideLoader, showLoader } = useLoader()
+  useEffect(() => {
+    const load = async () => {
+      if (!isNew && id) {
+        try {
+          showLoader()
+          const task = await getTaskById(id)
+          if (task) {
+            setTitle(task.title)
+            setDescription(task.description)
+          }
+        } finally {
+          hideLoader()
+        }
+      }
+    }
+    load()
+  }, [id])
 
   const handleSubmit = async () => {
     // validations
@@ -18,13 +37,18 @@ const TaskFormScreen = () => {
       return
     }
     try {
+      showLoader()
       if (isNew) {
         await createTask({ title, description })
+      } else {
+        await updateTask(id, { title, description })
       }
       router.back()
     } catch (err) {
-        console.error("Error saving task : ",err)
-        Alert.alert("Error", "Fail to save task")
+      console.error("Error saving task : ", err)
+      Alert.alert("Error", "Fail to save task")
+    } finally {
+      hideLoader()
     }
   }
 

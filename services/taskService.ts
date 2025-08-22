@@ -46,7 +46,7 @@ export const getTaskById = async (id: string) => {
   const taskDocRef = doc(db, "tasks", id)
   const snapshot = await getDoc(taskDocRef)
   const task = snapshot.exists()
-    ? { id: snapshot.id, ...snapshot.data() }
+    ? ({ id: snapshot.id, ...snapshot.data() } as Task)
     : null
   return task
 }
